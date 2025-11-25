@@ -1,0 +1,88 @@
+2025-11-25 20:58:29,384 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 20:58:29,384 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 20:58:29,385 - ServerComms - INFO - ServerComms started on 0.0.0.0:5000
+2025-11-25 20:58:37,686 - ServerComms - INFO - New bot connection: 10.47.198.233:7408
+2025-11-25 20:58:37,700 - ServerComms - WARNING - No callbacks registered for data type: unknown
+2025-11-25 20:58:37,714 - ServerComms - INFO - Bot 10.47.198.233:7408 disconnected
+2025-11-25 20:58:57,962 - ServerComms - INFO - New bot connection: 10.47.198.233:12135
+2025-11-25 20:58:57,976 - ServerComms - WARNING - No callbacks registered for data type: unknown
+2025-11-25 20:58:57,987 - ServerComms - INFO - Bot 10.47.198.233:12135 disconnected
+2025-11-25 21:00:24,907 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 21:00:24,909 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 21:00:29,462 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 21:00:29,462 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 21:00:29,464 - ServerComms - INFO - ServerComms started on 0.0.0.0:5000
+2025-11-25 21:00:35,349 - ServerComms - INFO - New bot connection: 10.47.198.233:9010
+2025-11-25 21:00:35,367 - ServerComms - WARNING - No callbacks registered for data type: unknown
+2025-11-25 21:00:35,411 - ServerComms - INFO - Bot 10.47.198.233:9010 disconnected
+2025-11-25 21:03:05,353 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 21:03:05,354 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 21:08:53,202 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 21:08:53,203 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 21:08:53,204 - ServerComms - INFO - ServerComms started on 0.0.0.0:5000
+2025-11-25 21:08:59,797 - ServerComms - INFO - New bot connection: 10.47.198.233:1531
+2025-11-25 21:08:59,866 - ServerComms - WARNING - No callbacks registered for data type: unknown
+2025-11-25 21:08:59,883 - ServerComms - INFO - Bot 10.47.198.233:1531 disconnected
+2025-11-25 21:11:34,781 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 21:11:34,782 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 21:22:36,669 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 21:22:36,669 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 21:22:36,670 - ServerComms - INFO - ServerComms started on 0.0.0.0:5000
+2025-11-25 21:25:40,827 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 21:25:40,828 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 21:30:04,439 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 21:30:04,439 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 21:30:04,441 - ServerComms - INFO - ServerComms started on 0.0.0.0:5000
+2025-11-25 21:30:11,148 - ServerComms - INFO - New bot connection: 10.47.198.233:2999
+2025-11-25 21:30:11,218 - ServerComms - WARNING - No callbacks registered for data type: trial run
+2025-11-25 21:30:11,269 - ServerComms - INFO - Bot 10.47.198.233:2999 disconnected
+2025-11-25 21:30:11,356 - ServerComms - INFO - New bot connection: 10.47.198.233:18028
+2025-11-25 21:30:26,397 - ServerComms - INFO - Bot 10.47.198.233:18028 disconnected
+2025-11-25 21:45:41,299 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 21:45:41,300 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 21:45:41,300 - ServerComms - INFO - Registered callback for data type: trial_run
+2025-11-25 21:45:41,302 - ServerComms - INFO - ServerComms started on 10.47.198.63:5000
+2025-11-25 21:45:41,975 - ServerComms - INFO - New bot connection: 10.47.198.233:17579
+2025-11-25 21:45:42,169 - ServerComms - WARNING - No callbacks registered for data type: trial run
+2025-11-25 21:45:42,220 - ServerComms - INFO - Bot 10.47.198.233:17579 disconnected
+2025-11-25 21:45:42,230 - ServerComms - INFO - New bot connection: 10.47.198.233:3516
+2025-11-25 21:45:57,235 - ServerComms - INFO - Bot 10.47.198.233:3516 disconnected
+2025-11-25 21:46:19,309 - ServerComms - INFO - New bot connection: 10.47.198.233:21996
+2025-11-25 21:46:19,379 - ServerComms - WARNING - No callbacks registered for data type: trial run
+2025-11-25 21:46:19,430 - ServerComms - INFO - Bot 10.47.198.233:21996 disconnected
+2025-11-25 21:46:19,440 - ServerComms - INFO - New bot connection: 10.47.198.233:32752
+2025-11-25 21:46:34,555 - ServerComms - INFO - Bot 10.47.198.233:32752 disconnected
+2025-11-25 21:53:11,501 - ServerComms - INFO - New bot connection: 10.47.198.233:10808
+2025-11-25 21:53:11,583 - ServerComms - WARNING - No callbacks registered for data type: trial run
+2025-11-25 21:53:11,642 - ServerComms - INFO - Bot 10.47.198.233:10808 disconnected
+2025-11-25 21:53:11,660 - ServerComms - INFO - New bot connection: 10.47.198.233:4939
+2025-11-25 21:53:26,741 - ServerComms - INFO - Bot 10.47.198.233:4939 disconnected
+2025-11-25 22:02:31,743 - ServerComms - INFO - New bot connection: 10.47.198.233:18667
+2025-11-25 22:02:31,812 - ServerComms - WARNING - No callbacks registered for data type: trial run
+2025-11-25 22:02:31,868 - ServerComms - INFO - Bot 10.47.198.233:18667 disconnected
+2025-11-25 22:02:31,879 - ServerComms - INFO - New bot connection: 10.47.198.233:10274
+2025-11-25 22:02:46,991 - ServerComms - INFO - Bot 10.47.198.233:10274 disconnected
+2025-11-25 22:03:23,704 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 22:03:23,705 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 22:03:27,821 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 22:03:27,821 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 22:03:27,822 - ServerComms - INFO - Registered callback for data type: trial run
+2025-11-25 22:03:27,823 - ServerComms - INFO - ServerComms started on 10.47.198.63:5000
+2025-11-25 22:03:33,391 - ServerComms - INFO - New bot connection: 10.47.198.233:15146
+2025-11-25 22:03:33,468 - ServerComms - INFO - Sent instruction to 10.47.198.233:15146: {'type': 'trial_response', 'message': 'trial accepted', 'timestamp': 1764088413.462626, 'status': 'success'}
+2025-11-25 22:03:33,517 - ServerComms - INFO - Bot 10.47.198.233:15146 disconnected
+2025-11-25 22:03:33,528 - ServerComms - INFO - New bot connection: 10.47.198.233:3115
+2025-11-25 22:03:48,743 - ServerComms - INFO - Bot 10.47.198.233:3115 disconnected
+2025-11-25 22:06:23,563 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 22:06:23,564 - ServerComms - INFO - ServerComms stopped successfully
+2025-11-25 22:06:26,073 - ServerComms - INFO - Registered callback for data type: system_status
+2025-11-25 22:06:26,073 - ServerComms - INFO - Registered callback for data type: sensor_data
+2025-11-25 22:06:26,073 - ServerComms - INFO - Registered callback for data type: trial run
+2025-11-25 22:06:26,075 - ServerComms - INFO - ServerComms started on 10.47.198.63:5000
+2025-11-25 22:06:31,575 - ServerComms - INFO - New bot connection: 10.47.198.233:6790
+2025-11-25 22:06:31,649 - ServerComms - INFO - Sent instruction to 10.47.198.233:6790: {'type': 'trial_response', 'message': 'trial accepted', 'distance_cm': 0, 'angle_degrees': 0, 'timestamp': 1764088591.6492512, 'status': 'success'}
+2025-11-25 22:06:31,701 - ServerComms - INFO - Bot 10.47.198.233:6790 disconnected
+2025-11-25 22:06:31,713 - ServerComms - INFO - New bot connection: 10.47.198.233:16172
+2025-11-25 22:06:46,824 - ServerComms - INFO - Bot 10.47.198.233:16172 disconnected
+2025-11-25 22:13:50,330 - ServerComms - INFO - Stopping ServerComms...
+2025-11-25 22:13:50,331 - ServerComms - INFO - ServerComms stopped successfully
