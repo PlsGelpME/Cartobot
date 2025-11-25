@@ -69,11 +69,11 @@ class AreaScanner:
             float: Distance in centimeters, or -1 for measurement error
         """
         # Send trigger pulse to initiate distance measurement
-        self.trigger.low()       # Ensure trigger starts low
+        self.trigger.value(0)       # Ensure trigger starts low
         time.sleep_us(2)         # Brief 2μs pause
-        self.trigger.high()      # Send 10μs high pulse
+        self.trigger.value(1)      # Send 10μs high pulse
         time.sleep_us(10)
-        self.trigger.low()       # Return to low state
+        self.trigger.value(0)       # Return to low state
         
         # Wait for echo pin to go high (start of measurement)
         # Implement timeout to prevent infinite waiting
@@ -140,7 +140,10 @@ class AreaScanner:
 
 # Usage example and test function
 # This demonstrates how to use the AreaScanner class
-def main():
+
+# Conditional execution for testing
+# Only runs when this file is executed directly, not when imported
+if __name__ == "__main__":
     """
     Demonstration of AreaScanner functionality
     Used for testing and verification during development
@@ -163,8 +166,3 @@ def main():
         print(f"\nFirst measurement: {results[0]}")
         print(f"Center measurement: {results[9]}")  # Approximately 90 degrees
         print(f"Last measurement: {results[-1]}")
-
-# Conditional execution for testing
-# Only runs when this file is executed directly, not when imported
-if __name__ == "__main__":
-    main()
