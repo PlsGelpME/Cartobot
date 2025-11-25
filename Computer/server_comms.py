@@ -8,7 +8,6 @@ import threading
 import time
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Callable
 
 class ServerComms:
     """
@@ -17,7 +16,7 @@ class ServerComms:
     Implements reliable TCP communication with callback system
     """
     
-    def __init__(self, host: str = '0.0.0.0', port: int = 5000):
+    def __init__(self, host = '0.0.0.0', port = 5000):
         """
         Initialize the communication server with network parameters
         
@@ -144,7 +143,7 @@ class ServerComms:
                 if self.running:
                     self.logger.error(f"Connection handler error: {e}")
                     
-    def _bot_communication_handler(self, client_socket: socket.socket, bot_id: str):
+    def _bot_communication_handler(self, client_socket, bot_id):
         """
         Handle communication with a single mobile bot
         Manages data reception and processing for individual bot connections
@@ -181,7 +180,7 @@ class ServerComms:
             # Always clean up bot connection resources
             self._cleanup_bot_connection(bot_id, client_socket)
             
-    def _receive_data(self, client_socket: socket.socket, bot_id: str) -> Optional[Dict]:
+    def _receive_data(self, client_socket, bot_id):
         """
         Receive and parse data from mobile bot
         Implements protocol: [4-byte length][json data]
@@ -222,7 +221,7 @@ class ServerComms:
             
             # Send acknowledgment with checksum for data integrity
             checksum = self._calculate_checksum(received_data)
-            ack_packet = checksum.to_bytes(4, 'big') + b'ACK'  # 4-byte checksum + ACK
+            ack_packet = checksum.to_bytes(4, 'big') + b'ACK' + b'\x00' # 4-byte checksum + ACK + 1-byte padding
             client_socket.sendall(ack_packet)
             
             # Log successful data reception
@@ -236,7 +235,7 @@ class ServerComms:
             self.logger.error(f"Data reception error from {bot_id}: {e}")
             return None
             
-    def _process_received_data(self, bot_id: str, data: Dict):
+    def _process_received_data(self, bot_id, data):
         """
         Process received data and trigger registered callbacks
         Routes data to appropriate handlers based on data type
@@ -259,7 +258,7 @@ class ServerComms:
         else:
             self.logger.warning(f"No callbacks registered for data type: {data_type}")
             
-    def send_instruction(self, bot_id: str, instruction: Dict) -> bool:
+    def send_instruction(self, bot_id, instruction):
         """
         Send movement instruction to specific bot
         Implements reliable instruction transmission
@@ -302,7 +301,7 @@ class ServerComms:
             self._cleanup_bot_connection(bot_id, client_socket)
             return False
             
-    def send_to_all_bots(self, instruction: Dict) -> Dict[str, bool]:
+    def send_to_all_bots(self, instruction):
         """
         Send instruction to all connected bots
         Useful for broadcast commands or synchronized operations
@@ -319,7 +318,7 @@ class ServerComms:
             results[bot_id] = self.send_instruction(bot_id, instruction)
         return results
         
-    def register_callback(self, data_type: str, callback: Callable):
+    def register_callback(self, data_type, callback):
         """
         Register callback function for specific data type
         Enables modular processing of different message types
@@ -337,7 +336,7 @@ class ServerComms:
         self.data_callbacks[data_type].append(callback)
         self.logger.info(f"Registered callback for data type: {data_type}")
         
-    def unregister_callback(self, data_type: str, callback: Callable):
+    def unregister_callback(self, data_type, callback):
         """
         Unregister callback function for specific data type
         Allows dynamic management of data handlers
@@ -350,7 +349,7 @@ class ServerComms:
             self.data_callbacks[data_type].remove(callback)
             self.logger.info(f"Unregistered callback for data type: {data_type}")
             
-    def get_connected_bots(self) -> List[str]:
+    def get_connected_bots(self):
         """
         Get list of currently connected bot IDs
         Useful for monitoring and management
@@ -360,7 +359,7 @@ class ServerComms:
         """
         return list(self.connected_bots.keys())
         
-    def get_bot_info(self, bot_id: str) -> Optional[Dict]:
+    def get_bot_info(self, bot_id):
         """
         Get information about specific connected bot
         
@@ -372,7 +371,7 @@ class ServerComms:
         """
         return self.connected_bots.get(bot_id)
         
-    def get_communication_stats(self) -> Dict:
+    def get_communication_stats(self):
         """
         Get comprehensive communication statistics
         Provides insights into server performance and usage
@@ -386,7 +385,7 @@ class ServerComms:
         stats['uptime'] = str(datetime.now() - stats['start_time']).split('.')[0]  # Server uptime
         return stats
         
-    def _calculate_checksum(self, data: bytes) -> int:
+    def _calculate_checksum(self, data):
         """
         Calculate simple 32-bit checksum for data verification
         Used to ensure data integrity during transmission
@@ -403,7 +402,7 @@ class ServerComms:
             checksum = (checksum + byte) & 0xFFFFFFFF  # 32-bit checksum
         return checksum
         
-    def _cleanup_bot_connection(self, bot_id: str, client_socket: socket.socket):
+    def _cleanup_bot_connection(self, bot_id, client_socket):
         """
         Clean up bot connection resources
         Removes bot from tracking and closes socket
@@ -444,20 +443,23 @@ class ServerComms:
             
         self.logger.info("ServerComms stopped successfully")
 
+
+
 # Example usage and test functions
-def main():
+# Conditional execution for testing
+if __name__ == "__main__":
     """
     Example usage of ServerComms module
     Demonstrates basic server operation and callback handling
     """
     
-    def handle_system_status(bot_id: str, data: Dict):
+    def handle_system_status(bot_id, data):
         """
         Example callback for system status messages
         """
         print(f"System status from {bot_id}: {data.get('message')}")
         
-    def handle_sensor_data(bot_id: str, data: Dict):
+    def handle_sensor_data(bot_id, data):
         """
         Example callback for sensor data messages
         """
@@ -467,12 +469,17 @@ def main():
         # Example: In real usage, this would trigger path planning
         # and send movement instructions back to the bot
         
+    def handle_trial_run(bot_id, data):
+        """Handle trial run and respond as instruction"""
+        print(f"Trial run received from {bot_id}")
+        
     # Create and start server
-    server_comms = ServerComms(host='0.0.0.0', port=5000)
+    server_comms = ServerComms(host='10.47.198.63', port=5000)
     
     # Register callback functions for different data types
     server_comms.register_callback('system_status', handle_system_status)
     server_comms.register_callback('sensor_data', handle_sensor_data)
+    server_comms.register_callback('trial run', handle_trial_run)  # NEW: Register trial run handler
     
     # Start server
     if server_comms.start_server():
@@ -496,7 +503,3 @@ def main():
             server_comms.stop_server()
     else:
         print("Failed to start ServerComms")
-
-# Conditional execution for testing
-if __name__ == "__main__":
-    main()
