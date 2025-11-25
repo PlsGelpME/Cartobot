@@ -6,6 +6,7 @@ import json
 import socket
 import network
 import time
+import errno
 from machine import Pin
 
 class CommunicationHandler:
@@ -64,7 +65,7 @@ class CommunicationHandler:
         # Connection successful - display network configuration
         print('Network config:', self.wlan.ifconfig())
         
-    def serialize_sensor_data(self, scan_data):
+    def serialize_sensor_data(self, data, status_type):
         """
         Convert sensor data to JSON format for transmission
         Creates structured packet with metadata for central computer
@@ -77,11 +78,16 @@ class CommunicationHandler:
         """
         # Convert raw scan data to list of dictionaries for better serialization
         # Each data point contains angle and distance in structured format
+        
+        if status_type == "system_status":
+            return json.dumps(data)
+        
         serializable_data = [{'angle': angle, 'distance_cm': distance} 
-                           for angle, distance in scan_data]
+                           for angle, distance in data]
         
         # Create comprehensive data packet with metadata
         packet = {
+            'type': status_type,
             'timestamp': time.time(),           # Unix timestamp for data synchronization
             'sensor_type': 'ultrasonic_scanner', # Identifies data source
             'data_points': serializable_data,   # Actual sensor measurements
@@ -91,7 +97,7 @@ class CommunicationHandler:
         # Convert to JSON string for transmission
         return json.dumps(packet)
         
-    def send_data(self, sensor_data):
+    def send_data(self, sensor_data, status_type):
         """
         Send sensor data to central computer and receive acknowledgment
         Implements reliable transmission with checksum verification
@@ -103,7 +109,7 @@ class CommunicationHandler:
             dict: Transmission status with success/failure information
         """
         # Serialize the sensor data for transmission
-        json_data = self.serialize_sensor_data(sensor_data)
+        json_data = self.serialize_sensor_data(sensor_data,status_type)
         
         # Create TCP socket for communication
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -117,11 +123,12 @@ class CommunicationHandler:
             # Convert JSON data to bytes for transmission
             data_bytes = json_data.encode('utf-8')
             data_length = len(data_bytes)
+            header = data_length.to_bytes(4,'big')
+            print(header,data_bytes)
             
             # Send data length first for protocol compliance
             # Central computer uses this to know how much data to expect
-            sock.sendall(data_length.to_bytes(4, 'big'))
-            
+            sock.sendall(header)
             # Send actual sensor data
             bytes_sent = sock.sendall(data_bytes)
             
@@ -150,13 +157,14 @@ class CommunicationHandler:
                 
             # Transmission successful
             return {'status': 'success', 'bytes_sent': data_length}
-                
-        except socket.timeout:
-            # Handle network timeout
-            return {'status': 'error', 'reason': 'communication_timeout'}
+                    
         except OSError as e:
-            # Handle network-related errors
-            return {'status': 'error', 'reason': f'network_error: {str(e)}'}
+            if e.args[0] == errno.ETIMEDOUT:
+                # Handle network timeout
+                return {'status': 'error', 'reason': 'communication_timeout'}
+            else:            
+                # Handle network-related errors
+                return {'status': 'error', 'reason': f'network_error: {str(e)}'}
         except Exception as e:
             # Handle unexpected errors
             return {'status': 'error', 'reason': f'unexpected_error: {str(e)}'}
@@ -212,10 +220,26 @@ class CommunicationHandler:
             instruction_str = instruction_bytes.decode('utf-8')
             instruction_data = json.loads(instruction_str)
             
+            print(instruction_data)
             # Validate instruction structure and content
-            if not self.validate_instruction(instruction_data):
-                return {'status': 'error', 'reason': 'invalid_instruction_format'}
-                
+            # Instead of validating as movement instruction, handle different types
+            response_type = instruction_data.get('type', 'unknown')
+            
+            if response_type == 'movement_instruction':
+                # Validate as movement command
+                if not self.validate_instruction(instruction_data):
+                    return {'status': 'error', 'reason': 'invalid_instruction_format'}
+                distance = instruction_data.get('distance_cm', 0)
+                angle = instruction_data.get('angle_degrees', 0)
+                return {'status': 'success', 'type': 'movement', 'distance': distance, 'angle': angle}
+            
+            elif response_type == 'trial_response':
+                # Handle trial response
+                message = instruction_data.get('message', '')
+                return {'status': 'success', 'type': 'trial_response', 'message': message}
+            
+            else:
+                return {'status': 'error', 'reason': f'unknown_response_type: {response_type}'}   
             # Send acknowledgment to central computer
             sock.sendall(b'ACK')
             
@@ -226,15 +250,16 @@ class CommunicationHandler:
             # Return successful instruction with movement data
             return {'status': 'success', 'distance': distance, 'angle': angle}
                 
-        except socket.timeout:
-            # Handle instruction reception timeout
-            return {'status': 'error', 'reason': 'instruction_timeout'}
+        except OSError as e:
+            if e.args[0] == errno.ETIMEDOUT:
+                # Handle instruction reception timeout
+                return {'status': 'error', 'reason': 'instruction_timeout'}
+            else:
+                # Handle network errors
+                return {'status': 'error', 'reason': f'network_error: {str(e)}'}      
         except json.JSONDecodeError:
             # Handle malformed JSON data
             return {'status': 'error', 'reason': 'invalid_json_instruction'}
-        except OSError as e:
-            # Handle network errors
-            return {'status': 'error', 'reason': f'network_error: {str(e)}'}
         except Exception as e:
             # Handle unexpected errors
             return {'status': 'error', 'reason': f'unexpected_error: {str(e)}'}
@@ -307,21 +332,21 @@ def main():
     # Create communication handler instance
     # Replace with actual network credentials and server details
     comm = CommunicationHandler(
-        ssid='my_wifi', 
-        password='password', 
-        server_ip='192.168.1.100', 
+        ssid='OnePlus 9R', 
+        password='kesav115', 
+        server_ip='10.47.198.63', 
         server_port=5000
     )
     
     # Example sensor data (simulating AreaScanner output)
-    sensor_data = [(0, 45), (10, 50), (20, 55), (30, 60), (40, 65),
+    trial_data = [(0, 45), (10, 50), (20, 55), (30, 60), (40, 65),
                    (50, 70), (60, 75), (70, 80), (80, 85), (90, 90),
                    (100, 85), (110, 80), (120, 75), (130, 70), (140, 65),
                    (150, 60), (160, 55), (170, 50), (180, 45)]
     
     # Send sensor data to central computer
     print("Sending sensor data...")
-    send_result = comm.send_data(sensor_data)
+    send_result = comm.send_data(trial_data,"trial run")
     
     # Check transmission result
     if send_result['status'] == 'success':
