@@ -16,7 +16,7 @@ class TopologyVisualizer:
     Auto-scales display and connects points to represent environment outlines
     """
     
-    def __init__(self, max_points: int = 200, update_interval: int = 1000):
+    def __init__(self, max_points = 200, update_interval = 1000):
         """
         Initialize the topology visualizer with display parameters
         
@@ -29,8 +29,8 @@ class TopologyVisualizer:
         self.update_interval = update_interval
         
         # Data storage structures
-        self.all_points: Deque[Tuple[float, float]] = deque(maxlen=max_points)  # All (x, y) coordinates
-        self.scan_sequences: List[List[Tuple[float, float]]] = []  # Complete scan sequences for connection
+        self.all_points = deque(maxlen=max_points)  # All (x, y) coordinates
+        self.scan_sequences = []  # Complete scan sequences for connection
         
         # Initialize matplotlib figure and axes for plotting
         self.fig, self.ax = plt.subplots(figsize=(12, 10))
@@ -76,7 +76,7 @@ class TopologyVisualizer:
         # Add legend to identify plot elements
         self.ax.legend(loc='upper right', fontsize=10)
         
-    def polar_to_cartesian(self, angle_degrees: float, distance_cm: float) -> Tuple[float, float]:
+    def polar_to_cartesian(self, angle_degrees, distance_cm):
         """
         Convert polar coordinates (angle, distance) to Cartesian coordinates (x, y)
         Adjusts for mathematical convention where 0° = East, 90° = North
@@ -98,7 +98,7 @@ class TopologyVisualizer:
         
         return x, y
         
-    def add_sensor_data(self, angle_degrees: float, distance_cm: float):
+    def add_sensor_data(self, angle_degrees, distance_cm):
         """
         Add individual sensor data point to the topology visualization
         Filters invalid measurements and updates auto-scaling bounds
@@ -120,7 +120,7 @@ class TopologyVisualizer:
         # Update auto-scaling boundaries to include new point
         self._update_scaling_bounds(x, y)
         
-    def add_scan_data(self, scan_data: List[Tuple[float, float]]):
+    def add_scan_data(self, scan_data):
         """
         Add a complete scan sequence to the topology visualization
         Stores scan sequences separately for point connection and outline creation
@@ -152,7 +152,7 @@ class TopologyVisualizer:
         if len(self.scan_sequences) > 10:
             self.scan_sequences.pop(0)
             
-    def _update_scaling_bounds(self, x: float, y: float):
+    def _update_scaling_bounds(self, x, y):
         """
         Update the auto-scaling boundaries based on new data points
         Ensures all points remain visible in the plot
@@ -206,7 +206,7 @@ class TopologyVisualizer:
         else:
             self.ax.set_ylim(self.y_min - y_margin, self.y_max + y_margin)
         
-    def connect_scan_points(self, scan_points: List[Tuple[float, float]]) -> Tuple[List[float], List[float]]:
+    def connect_scan_points(self, scan_points):
         """
         Connect points from a single scan to represent environment outline
         Sorts points by angle and creates closed polygons for better visualization
@@ -283,7 +283,7 @@ class TopologyVisualizer:
         self.update_display()
         plt.show()
         
-    def save_topology_image(self, filename: str = "topology_map.png"):
+    def save_topology_image(self, filename = "topology_map.png"):
         """
         Save the current topology map as a high-resolution image file
         Useful for documentation, reporting, and analysis
@@ -320,7 +320,7 @@ class TopologyVisualizer:
         # Refresh the display
         self.update_display()
         
-    def get_statistics(self) -> dict:
+    def get_statistics(self):
         """
         Get statistics about the current topology data
         Provides insights into mapping progress and coverage
