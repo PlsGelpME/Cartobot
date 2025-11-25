@@ -6,21 +6,21 @@ import time
 import threading
 import json
 import math
-from typing import Dict, List, Optional, Tuple
 import logging
 
 # Import our custom modules for system integration
 from server_comms import ServerComms
 from topology_visualizer import TopologyVisualizer
 from slam_navigator import SLAMNavigator, Pose
-
+host = '0.0.0.0'#ip address
+port = 5000 #port number
 class AutonomousNavigationSystem:
     """
     Main system class that integrates all server-side modules
     Coordinates communication, visualization, and navigation for autonomous operation
     """
     
-    def __init__(self, host: str = '0.0.0.0', port: int = 5000):
+    def __init__(self, host, port):
         """
         Initialize the complete autonomous navigation system
         
@@ -34,9 +34,9 @@ class AutonomousNavigationSystem:
         self.navigator = SLAMNavigator()  # SLAM and path planning
         
         # System state tracking
-        self.connected_bots: Dict[str, Dict] = {}  # Dictionary of connected bots and their status
+        self.connected_bots = {}  # Dictionary of connected bots and their status
         self.running = False  # Main system control flag
-        self.active_bot: Optional[str] = None  # Currently controlled bot identifier
+        self.active_bot = None  # Currently controlled bot identifier
         self.current_mission = None  # Current navigation mission data
         
         # Navigation parameters for autonomous operation
@@ -73,7 +73,7 @@ class AutonomousNavigationSystem:
         self.server_comms.register_callback('sensor_data', self.handle_sensor_data)
         self.server_comms.register_callback('movement_complete', self.handle_movement_complete)
         
-    def handle_system_status(self, bot_id: str, data: Dict):
+    def handle_system_status(self, bot_id, data):
         """
         Handle system status messages from connected bots
         Updates bot tracking and initiates autonomous operation
@@ -99,7 +99,7 @@ class AutonomousNavigationSystem:
         # Send start signal to begin autonomous operation
         self.send_start_signal(bot_id)
         
-    def handle_sensor_data(self, bot_id: str, data: Dict):
+    def handle_sensor_data(self, bot_id, data):
         """
         Handle sensor data from bots and update navigation system
         Processes scan data and triggers autonomous movement planning
@@ -133,7 +133,7 @@ class AutonomousNavigationSystem:
         # Plan and execute next autonomous movement
         self.plan_and_execute_next_move(bot_id)
         
-    def handle_movement_complete(self, bot_id: str, data: Dict):
+    def handle_movement_complete(self, bot_id, data):
         """
         Handle movement completion acknowledgments from bots
         Logs completion and updates system state
@@ -149,7 +149,7 @@ class AutonomousNavigationSystem:
         # - Log movement statistics
         # - Trigger next planning cycle if needed
         
-    def send_start_signal(self, bot_id: str):
+    def send_start_signal(self, bot_id):
         """
         Send start signal to begin autonomous operation
         Authorizes the bot to begin the scan-move cycle
@@ -171,7 +171,7 @@ class AutonomousNavigationSystem:
         else:
             self.logger.error(f"Failed to send start signal to {bot_id}")
             
-    def plan_and_execute_next_move(self, bot_id: str):
+    def plan_and_execute_next_move(self, bot_id):
         """
         Plan next movement using SLAM and RRT*, then send instruction to bot
         Implements autonomous exploration and navigation
@@ -214,7 +214,7 @@ class AutonomousNavigationSystem:
         except Exception as e:
             self.logger.error(f"Error in planning and execution: {e}")
             
-    def generate_exploration_goal(self, current_pose: Pose) -> Optional[Tuple[float, float]]:
+    def generate_exploration_goal(self, current_pose):
         """
         Generate exploration goal using frontier-based exploration
         Finds safe exploration targets within known areas
@@ -548,7 +548,7 @@ def main():
     print("Initializing Autonomous Navigation System...")
     
     # Create and start the complete autonomous system
-    system = AutonomousNavigationSystem(host='0.0.0.0', port=5000)
+    system = AutonomousNavigationSystem(host, port)
     
     try:
         if system.start_system():
