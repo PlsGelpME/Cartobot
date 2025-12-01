@@ -1,311 +1,246 @@
-# movement_controller.py - Mobile Bot Movement Controller
-# This module controls the stepper motor for precise locomotion
-# Converts distance and angle commands into precise motor movements
-
+# movement_controller.py - With Parameterized Pin Configuration
 from machine import Pin
 import time
 import math
 
 class MovementController:
     """
-    Movement Controller for mobile bot locomotion
-    Translates high-level distance and angle commands into stepper motor control
-    Provides precise movement and rotation capabilities
+    Differential Drive Movement Controller 
+    Optimized for: 4cm wheels, 10.5cm wheel base, 28BYJ-48 steppers
     """
     
-    def __init__(self, step_pin, dir_pin, steps_per_revolution=200, wheel_diameter_cm=6.5, wheel_base_cm=15.0):
+    def __init__(self, left_pins, right_pins, steps_per_revolution=2048):
         """
-        Initialize movement controller with motor parameters and physical dimensions
+        Initialize with your specific pin configuration
         
         Args:
-            step_pin: GPIO pin connected to stepper motor STEP input
-            dir_pin: GPIO pin connected to stepper motor DIRECTION input
-            steps_per_revolution: Number of steps for one full motor revolution
-            wheel_diameter_cm: Diameter of bot wheels in centimeters
-            wheel_base_cm: Distance between wheels for turning calculations
+            left_pins: [IN1, IN2, IN3, IN4] for left motor
+            right_pins: [IN1, IN2, IN3, IN4] for right motor
+            steps_per_revolution: 2048 for 28BYJ-48
         """
-        # Stepper motor control pins
-        # STEP pin triggers individual motor steps
-        self.step_pin = Pin(step_pin, Pin.OUT)
-        # DIRECTION pin controls movement direction (high/low)
-        self.dir_pin = Pin(dir_pin, Pin.OUT)
+        print(" Initializing Movement Controller")
+        print(f"Left Motor Pins: {left_pins}")
+        print(f"Right Motor Pins: {right_pins}")
         
-        # Motor mechanical parameters
-        self.steps_per_revolution = steps_per_revolution  # Motor resolution
-        self.wheel_diameter_cm = wheel_diameter_cm        # Wheel size for distance calculation
-        self.wheel_base_cm = wheel_base_cm                # Distance between wheels for turning
+        # ULN2003 8-step sequence for smooth operation
+        self.step_sequence = [
+            [1, 0, 0, 1],
+            [1, 0, 0, 0], 
+            [1, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 1],
+            [0, 0, 0, 1]
+        ]
         
-        # Calculate derived constants for movement calculations
-        self.wheel_circumference = math.pi * wheel_diameter_cm  # Distance per wheel revolution
-        self.steps_per_cm = steps_per_revolution / self.wheel_circumference  # Steps needed per cm
+        # Your specific robot geometry
+        self.WHEEL_DIAMETER = 4.0      # cm
+        self.WHEEL_BASE = 10.5         # cm
+        self.STEPS_PER_REV = steps_per_revolution
         
-        # Movement control parameters
-        self.step_delay_ms = 2  # Delay between steps in milliseconds (controls motor speed)
+        # Calculate precise movement constants
+        self.WHEEL_CIRCUMFERENCE = math.pi * self.WHEEL_DIAMETER  # 12.57 cm
+        self.STEPS_PER_CM = self.STEPS_PER_REV / self.WHEEL_CIRCUMFERENCE  # 163 steps/cm
         
-    def calculate_steps_for_distance(self, distance_cm):
-        """
-        Calculate number of steps needed to move specified distance
-        Converts linear distance to motor steps based on wheel geometry
+        print(f" Movement Calibration:")
+        print(f"- Wheel diameter: {self.WHEEL_DIAMETER}cm")
+        print(f"- Wheel base: {self.WHEEL_BASE}cm") 
+        print(f"- Steps per cm: {self.STEPS_PER_CM:.1f}")
         
-        Args:
-            distance_cm: Distance to move in centimeters (positive or negative)
-            
-        Returns:
-            int: Number of steps required for the movement
-        """
-        # Use absolute distance for step calculation
-        # Direction is handled separately by DIR pin
-        return int(abs(distance_cm) * self.steps_per_cm)
+        # Initialize motor coils with provided pins
+        self.left_coils = [Pin(pin, Pin.OUT) for pin in left_pins]
+        self.right_coils = [Pin(pin, Pin.OUT) for pin in right_pins]
+        
+        # Movement control
+        self.step_delay_ms = 3  # Slightly slower for stability
+        
+        # Step counters
+        self.left_step_pos = 0
+        self.right_step_pos = 0
+        
+        # Direction correction (will be determined by test)
+        self.left_direction_correction = 1
+        self.right_direction_correction = 1
+        
+        # Release motors initially
+        self._release_motors()
+        print(" Movement Controller Ready")
     
-    def calculate_rotation_angle(self, target_angle):
-        """
-        Calculate the rotation needed to achieve target angle
-        Normalizes angles to shortest rotation path
-        
-        Args:
-            target_angle: Desired angle in degrees
-            
-        Returns:
-            float: Normalized rotation angle in degrees (-180 to 180)
-        """
-        # Normalize angle to -180 to 180 degree range
-        # This finds the shortest rotation path to target angle
-        normalized_angle = target_angle % 360  # Ensure angle is within 0-360
-        if normalized_angle > 180:
-            normalized_angle -= 360  # Convert to -180 to 180 range
-            
-        return normalized_angle
+    def _release_motors(self):
+        """Turn off all coils to prevent overheating"""
+        for coil in self.left_coils + self.right_coils:
+            coil.value(0)
     
-    def calculate_rotation_distance(self, rotation_angle):
+    def _step_motor(self, coils, step_pos, direction):
         """
-        Calculate linear distance each wheel needs to travel for rotation
-        Uses arc length formula based on wheel base geometry
-        
-        Args:
-            rotation_angle: Angle to rotate in degrees (positive = clockwise)
+        Step a single motor and return new position
+        """
+        if direction == 1:
+            new_pos = (step_pos + 1) % 8
+        else:
+            new_pos = (step_pos - 1) % 8
             
-        Returns:
-            float: Linear distance each wheel travels in centimeters
-        """
-        # Convert angle to radians for trigonometric calculations
-        angle_radians = math.radians(abs(rotation_angle))
-        
-        # Calculate arc length for rotation
-        # Each wheel travels along an arc with radius = wheel_base / 2
-        wheel_travel_distance = angle_radians * (self.wheel_base_cm / 2)
-        
-        return wheel_travel_distance
+        # Apply the step pattern
+        pattern = self.step_sequence[new_pos]
+        for i in range(4):
+            coils[i].value(pattern[i])
+            
+        return new_pos
     
     def move_forward(self, distance_cm):
         """
-        Move straight forward or backward by specified distance
-        Controls stepper motor for precise linear movement
+        Move straight forward/backward
         
         Args:
-            distance_cm: Distance to move in centimeters
-                         Positive = forward, Negative = backward
+            distance_cm: Positive=forward, Negative=backward
         """
-        # Skip movement if distance is zero
         if distance_cm == 0:
             return
             
-        # Set direction based on distance sign
-        if distance_cm > 0:
-            self.dir_pin.value(1)  # Forward direction
-        else:
-            self.dir_pin.value(0)  # Backward direction
-            
-        # Calculate number of steps needed for the distance
-        steps = self.calculate_steps_for_distance(distance_cm)
+        # Calculate exact steps needed
+        steps = int(abs(distance_cm) * self.STEPS_PER_CM)
+        direction = 1 if distance_cm > 0 else -1
         
-        # Execute stepping sequence
-        for _ in range(steps):
-            # Generate step pulse
-            self.step_pin.value(1)  # Step pin high
-            time.sleep_ms(1)        # Maintain high state briefly
-            self.step_pin.value(0)  # Step pin low
-            
-            # Delay between steps controls motor speed
+        print(f" Moving {'FORWARD' if distance_cm > 0 else 'BACKWARD'} {abs(distance_cm)}cm → {steps} steps")
+        
+        # Apply direction corrections
+        left_dir = direction * self.left_direction_correction
+        right_dir = direction * self.right_direction_correction
+        
+        # Execute movement
+        for i in range(steps):
+            self.left_step_pos = self._step_motor(self.left_coils, self.left_step_pos, left_dir)
+            self.right_step_pos = self._step_motor(self.right_coils, self.right_step_pos, right_dir)
             time.sleep_ms(self.step_delay_ms)
-            
+        
+        self._release_motors()
+        print("Movement completed")
+    
     def rotate(self, angle_degrees):
         """
         Rotate in place by specified angle
-        Implements point turns by moving wheels in opposite directions
         
         Args:
-            angle_degrees: Angle to rotate in degrees
-                           Positive = clockwise, Negative = counterclockwise
+            angle_degrees: Positive=clockwise, Negative=counterclockwise
         """
-        # Skip rotation if angle is zero
         if angle_degrees == 0:
             return
             
-        # Calculate rotation distance for each wheel
-        # Both wheels move equal distances in opposite directions
-        rotation_distance = self.calculate_rotation_distance(angle_degrees)
+        # Calculate rotation geometry
+        rotation_circumference = math.pi * self.WHEEL_BASE  # 32.99 cm
+        wheel_travel_distance = (abs(angle_degrees) / 360.0) * rotation_circumference
+        
+        # Calculate steps for rotation
+        steps = int(wheel_travel_distance * self.STEPS_PER_CM)
+        
+        print(f" Rotating {'CLOCKWISE' if angle_degrees > 0 else 'COUNTERCLOCKWISE'} {abs(angle_degrees)}° → {steps} steps")
         
         # Set directions for rotation
-        # For single motor system, we simulate rotation by moving one wheel
-        # In dual motor system, both motors would be controlled simultaneously
         if angle_degrees > 0:
-            # Clockwise rotation
-            left_direction = 1   # Left wheel forward
-            right_direction = 0  # Right wheel backward
+            # Clockwise: left forward, right backward
+            left_dir = 1 * self.left_direction_correction
+            right_dir = -1 * self.right_direction_correction
         else:
-            # Counterclockwise rotation  
-            left_direction = 1   # Left wheel backward
-            right_direction = 0  # Right wheel forward
-            
-        # For single motor implementation, double the steps to simulate rotation
-        # This approximates the effect of differential steering
-        steps = self.calculate_steps_for_distance(rotation_distance * 2)
+            # Counterclockwise: left backward, right forward
+            left_dir = -1 * self.left_direction_correction  
+            right_dir = 1 * self.right_direction_correction
         
-        # Set direction for the active motor
-        self.dir_pin.value(left_direction if angle_degrees > 0 else right_direction)
-        
-        # Execute rotation steps
-        for _ in range(steps):
-            # Generate step pulse
-            self.step_pin.value(1)  # Step pin high
-            time.sleep_ms(1)        # Maintain high state
-            self.step_pin.value(0)  # Step pin low
-            
-            # Delay between steps
+        # Execute rotation
+        for i in range(steps):
+            self.left_step_pos = self._step_motor(self.left_coils, self.left_step_pos, left_dir)
+            self.right_step_pos = self._step_motor(self.right_coils, self.right_step_pos, right_dir)
             time.sleep_ms(self.step_delay_ms)
+        
+        self._release_motors()
+        print(" Rotation completed")
     
     def move_with_angle(self, distance_cm, angle_degrees):
         """
-        Move specified distance at specified angle relative to current heading
-        Combines rotation and linear movement for precise navigation
-        
-        Args:
-            distance_cm: Distance to move in centimeters
-            angle_degrees: Angle relative to current heading in degrees
+        Combined move: rotate then move straight
         """
-        # Skip if both distance and angle are zero
         if distance_cm == 0 and angle_degrees == 0:
             return
             
-        # First, rotate to target angle relative to current heading
+        # First rotate to target angle
         if angle_degrees != 0:
+            print(f" Phase 1: Rotating to {angle_degrees}°")
             self.rotate(angle_degrees)
-            time.sleep_ms(500)  # Brief pause after rotation for stabilization
-            
-        # Then, move straight for the specified distance
+            time.sleep_ms(500)
+        
+        # Then move straight
         if distance_cm != 0:
+            print(f" Phase 2: Moving {distance_cm}cm")
             self.move_forward(distance_cm)
-            
-    def precise_move(self, distance_cm, angle_degrees, speed_factor=1.0):
+    
+    def test_motor_directions(self):
         """
-        More precise movement with adjustable speed control
-        Allows fine-tuning of movement speed for different scenarios
+        Diagnostic test to determine motor directions
+        Run this first to see which way your bot moves!
+        """
+        print("\n MOTOR DIRECTION TEST")
+        print("======================")
+        
+        # Test forward movement
+        print("Testing forward movement...")
+        self.move_forward(5)
+        
+        print("\n OBSERVATION GUIDE:")
+        print(" MOVED STRAIGHT: Motors are correct!")
+        print(" TURNED LEFT: Right motor reversed → run: mover.fix_motor_direction(1, -1)")
+        print("TURNED RIGHT: Left motor reversed → run: mover.fix_motor_direction(-1, 1)")
+    
+    def fix_motor_direction(self, left_correction=1, right_correction=1):
+        """
+        Fix motor directions if they're mounted opposite
         
         Args:
-            distance_cm: Distance to move in centimeters
-            angle_degrees: Angle relative to current heading in degrees
-            speed_factor: Speed multiplier (>1 = faster, <1 = slower)
+            left_correction: 1=normal, -1=reversed
+            right_correction: 1=normal, -1=reversed
         """
-        # Store original speed setting
-        original_delay = self.step_delay_ms
-        
-        # Adjust speed based on speed factor
-        self.step_delay_ms = int(original_delay / speed_factor)
-        
-        try:
-            # Execute movement with adjusted speed
-            self.move_with_angle(distance_cm, angle_degrees)
-        finally:
-            # Restore original speed setting regardless of success/failure
-            self.step_delay_ms = original_delay
+        self.left_direction_correction = left_correction
+        self.right_direction_correction = right_correction
+        print(f"️ Direction correction applied: Left={left_correction}, Right={right_correction}")
     
-    def stop(self):
+    def set_speed(self, speed_factor):
         """
-        Stop any ongoing movement immediately
-        For stepper motors, stopping is immediate since they move step by step
-        This function can be expanded for emergency stop scenarios
+        Adjust movement speed
         """
-        # Stepper motors stop immediately when stepping stops
-        # No additional action needed for basic implementation
-        # Can be expanded with braking or position holding in advanced implementations
-        pass
+        base_delay = 3  # ms
+        self.step_delay_ms = max(1, int(base_delay / speed_factor))
+        print(f" Speed set to {speed_factor}x → delay: {self.step_delay_ms}ms")
 
-# Dual motor version for differential drive systems
-# This class provides true differential steering for two-motor setups
-class DualMotorMovementController:
-    """
-    Advanced movement controller for dual motor differential drive systems
-    Provides true tank-style steering with independent motor control
-    """
-    
-    def __init__(self, left_step_pin, left_dir_pin, right_step_pin, right_dir_pin, 
-                 steps_per_revolution=200, wheel_diameter_cm=6.5, wheel_base_cm=15.0):
-        """
-        Initialize dual motor controller with separate motor controls
-        
-        Args:
-            left_step_pin: Left motor STEP pin
-            left_dir_pin: Left motor DIRECTION pin  
-            right_step_pin: Right motor STEP pin
-            right_dir_pin: Right motor DIRECTION pin
-            steps_per_revolution: Steps per motor revolution
-            wheel_diameter_cm: Wheel diameter in centimeters
-            wheel_base_cm: Distance between wheels
-        """
-        # Left motor control pins
-        self.left_step = Pin(left_step_pin, Pin.OUT)
-        self.left_dir = Pin(left_dir_pin, Pin.OUT)
-        
-        # Right motor control pins  
-        self.right_step = Pin(right_step_pin, Pin.OUT)
-        self.right_dir = Pin(right_dir_pin, Pin.OUT)
-        
-        # Motor parameters (same as single motor controller)
-        self.steps_per_revolution = steps_per_revolution
-        self.wheel_diameter_cm = wheel_diameter_cm
-        self.wheel_base_cm = wheel_base_cm
-        
-        # Calculate movement constants
-        self.wheel_circumference = math.pi * wheel_diameter_cm
-        self.steps_per_cm = steps_per_revolution / self.wheel_circumference
-        
-        # Speed control parameter
-        self.step_delay_ms = 2
-
-# Usage example and test function
-# Demonstrates how to use the MovementController class
+# Test function with your specific pins
 def main():
-    """
-    Example usage of MovementController for testing
-    """
-    # Create movement controller instance
-    # Replace pin numbers with actual GPIO connections
-    mover = MovementController(step_pin=12, dir_pin=13)
+    """Test movement with your exact pin configuration"""
     
-    # Example movement sequence
-    print("Starting movement test...")
+    # YOUR PIN CONFIGURATION
+    left_pins = [19, 18, 5, 17]    # Left motor [IN1, IN2, IN3, IN4]
+    right_pins = [15, 2, 4, 16]  # Right motor [IN1, IN2, IN3, IN4]
     
-    # Move forward 50 cm
-    print("Moving forward 50cm...")
-    mover.move_forward(50)
-    time.sleep(1)  # Pause between movements
+    # Create movement controller
+    mover = MovementController(left_pins, right_pins)
     
-    # Rotate 90 degrees clockwise
-    print("Rotating 90 degrees clockwise...")
+    print("\n TESTING YOUR BOT MOVEMENTS")
+    print("============================")
+    
+    # First, run the direction test
+    mover.test_motor_directions()
+    
+    # If it didn't move straight, uncomment and run the appropriate fix:
+    # mover.fix_motor_direction(1, -1)  # If it turned LEFT
+    # mover.fix_motor_direction(-1, 1)  # If it turned RIGHT
+    
+    # Then test the movements
+    print("\n Testing rotation...")
     mover.rotate(90)
     time.sleep(1)
     
-    # Move at 45 degree angle for 30cm
-    print("Moving 30cm at 45 degree angle...")
-    mover.move_with_angle(30, 45)
+    print("\n Testing forward movement...")
+    mover.move_forward(10)
     time.sleep(1)
     
-    # Precise slow movement
-    print("Precise slow movement...")
-    mover.precise_move(20, 0, speed_factor=0.5)  # Half speed
-    
-    print("Movement test completed")
+    print("\n All tests completed!")
 
-# Conditional execution for testing
 if __name__ == "__main__":
     main()
